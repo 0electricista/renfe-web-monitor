@@ -1,6 +1,5 @@
 # renfe-bot
 
-**Read this in [English](../README.md)**
 
 ## Descripción
 
@@ -12,9 +11,11 @@ reserva. Notifica rápidamente a los usuarios cuando hay billetes disponibles
 para comprar. El bot ahora admite una interfaz de chatbot de Telegram para una
 interacción mejorada con el usuario.
 
-El manejo de errores no es perfecto, por lo que si encuentras algún problema,
-reintando el comando o utilizando /reintentar debería funcionar. Si el problema
-persiste, por favor abre un ticket en GitHub.
+Este fork de Renfe-bot implementa una nueva CLI que se conecta directamente con un bot de Telegram, además
+implementa notificaciones en Windows mediante ```win11toast```. Por último, este fork permite guardar
+**estaciones favoritas**, para agilizar los procesos de búsqueda.
+
+
 
 ## Como utilizar el bot
 
@@ -34,53 +35,34 @@ pip install -r requirements.txt
 
 Sigue los siguientes pasos para instalar y configurar el Renfe-bot:
 
-1. Clona este repositorio en tu máquina local.
-2. Instala las dependencias requeridas utilizando el comando mencionado en la
+1. Asegúrate de tener Python con versión >= 3.12, si no instálalo desde Google
+2. Descarga a partir de releases o clona este repositorio en tu máquina local.
+3. Instala las dependencias requeridas utilizando el comando mencionado en la
    sección 'Requisitos'.
-3. Instalar playwright y sus dependencias con los siguientes comandos: `playwright install && playwright install-deps`
-4. Ejecuta el bot ejecutándolo (`python bot/renfe-bot.py`) en el directorio raíz
+4. Ejecuta el bot ejecutándolo (`python repeat.py`) en el directorio raíz
    del proyecto.
 5. Cualquier dato requerido, como la clave API, se solicitará cuando ejecutes el
    bot por primera vez.
+6. Las estaciones favoritas se guardan. Si quieres borrarla, ve al archivo estaciones.txt y borra el nombre de las estaciones. No dejes un vacío.
+7. NO INTRODUZCAS ESTACIONES NUEVAS (a no ser que sepas el nombre exacto de la estación o lo hayas mirado en stations.json)
+8. Disfrutalo.
 
-### Opción B: Correrlo en un container de Docker
+#### Creación bot de Telegram
+1. Necesitas una cuenta de Telegram
+2. Entra aquí y sigue las instrucciones: https://telegram.me/BotFather. Asegúrate de copiar el token.
+3. Luego entra aquí: ```https://api.telegram.org/bot{pega_aqui_tu_token_y_quita_las_llaves}/getUpdates``` pegando tu token donde pone que lo pongas
+4. Envíale un mensaje a tu bot en Telegram, y vuelve a la página de antes (api.telegram...).
+5. Verás algo parecido a "message":{"message_id":X,"from":{"id":NUMEROSDEID..."
+6. Copia el número (sin comillas) que aparezca en id (NUMEROSDEID), y ese es el CHAT_ID
 
-#### Requisitos
 
-Para correrlo en Docker, solo necesitas tenerlo instalado, todo lo demás viene
-en el Dockerfile.
-
-> [!IMPORTANT]
-> Es posible que tengas que añadir `sudo` antes de cada comando de
-> Docker, también puedes añadir tu usuario al grupo `docker`, revisa [este documento]
-> (https://docs.docker.com/engine/install/linux-postinstall/).
-
-#### Instalación
-
-Primero hay que construir la imagen, lo hacemos con el siguiente comando:
-
-```bash
-docker build -t renfe-bot .
-```
-
-Cuando la imagen termine de construirse, podemos correrla con el siguiente comando:
-
-```bash
-docker run -it -v $(pwd):/app renfe-bot
-```
-
-O si estás utilizando Windows:
-
-```bat
-docker run -it -v %cd%:/app renfe-bot
-```
 
 ## Uso
 
-Para usar el bot, envía un mensaje a tu bot en Telegram. Necesitarás
+Para usar el necesitarás ejecutar `python repeat.py`. Necesitarás
 proporcionar datos como las estaciones de origen y destino, y las fechas. El bot
 monitoreará la disponibilidad de billetes y te notificará inmediatamente cuando
-haya un billete disponible para tu viaje.
+haya un billete disponible para tu viaje a partir de Telegram o con una notificación en Windows.
 
 ## Contribuciones
 
