@@ -3,7 +3,7 @@
 
 ## Descripción
 
-Renfe-bot es un bot de Telegram diseñado para ayudar a los usuarios a comprar
+Renfe-bot es un bot diseñado para ayudar a los usuarios a comprar
 billetes de tren de Renfe, el principal operador ferroviario de España. El bot
 monitorea la disponibilidad de billetes, especialmente en situaciones en las que
 están agotados y solo se vuelven a estar disponibles cuando alguien cancela su
