@@ -1,6 +1,6 @@
 # 🚄 Renfe Web Monitor
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://renfebot-cli-sibhhpyqlc4usxohargudb.streamlit.app/)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://renfe-monitor.streamlit.app/)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -12,7 +12,7 @@
 
 No necesitas instalar nada en tu ordenador. Usa la versión web accesible desde cualquier navegador:
 
-> **[👉 HAZ CLICK AQUÍ PARA ABRIR EL MONITOR WEB](https://renfebot-cli-sibhhpyqlc4usxohargudb.streamlit.app/)**
+> **[👉 HAZ CLICK AQUÍ PARA ABRIR EL MONITOR WEB](https://renfe-monitor.streamlit.app/)**
 
 ### ¿Cómo funciona?
 1. **Entra al enlace** de arriba.
