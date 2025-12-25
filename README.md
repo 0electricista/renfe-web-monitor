@@ -10,9 +10,12 @@ están agotados y solo se vuelven a estar disponibles cuando alguien cancela su
 reserva. Notifica rápidamente a los usuarios cuando hay billetes disponibles
 para comprar. 
 
-Este fork de Renfe-bot implementa una nueva CLI que se conecta directamente con un bot de Telegram, además,
+Este fork de Renfe-bot proporciona una versión web que tiene integración con Telegram y con las notificaciones del navegador.
+Se despliega usando ```Streamlit``` y es accesible desde [aquí](https://renfebot-cli-sibhhpyqlc4usxohargudb.streamlit.app/)
+
+Si no, tambien implementa una nueva CLI que se conecta directamente con Telegram, además,
 implementa notificaciones en Windows mediante ```win11toast```. Por último, este fork permite guardar
-**estaciones favoritas**, para agilizar los procesos de búsqueda.
+**estaciones favoritas** en la opción CLI, para agilizar los procesos de búsqueda.
 
 
 
@@ -23,7 +26,7 @@ implementa notificaciones en Windows mediante ```win11toast```. Por último, est
 
 #### 📦 Instalación
 
-Sigue los siguientes pasos para instalar y configurar el Renfe-bot:
+Sigue los siguientes pasos para instalar y configurar el Renfe-bot en tu equipo (usando la CLI):
 
 1. Asegúrate de tener [Python](https://www.python.org/downloads/) con versión >= 3.12, si no instálalo desde Google
 2. Descargalo [aquí](https://github.com/0electricista/renfebot-cli/archive/refs/tags/v1.0.zip) o clona este repositorio en tu máquina local.
@@ -35,7 +38,7 @@ Sigue los siguientes pasos para instalar y configurar el Renfe-bot:
    bot por primera vez.
 6. Las estaciones favoritas se guardan. Si quieres borrarla, ve al archivo estaciones.txt y borra el nombre de las estaciones. No dejes un vacío.
 7. Disfrutalo.
-
+8. OPCIONAL: si decides correr la versión de Streamlit en tu ordenador, ejecuta en el terminal ```streamlit run app.py``` y se abrirá la versión web en local.
 #### 📂 Requisitos
 
 Las dependencias requeridas para ejecutar este proyecto están incluidas en el
