@@ -1,13 +1,12 @@
 import streamlit as st
 import json
-import os
-import sys
 import time
 import requests
+import pytz 
 import extra_streamlit_components as stx  
 from datetime import datetime, time as dt_time, timedelta
 import streamlit.components.v1 as components
-
+SPAIN_TZ = pytz.timezone('Europe/Madrid')
 
 try:
     from src.scraper import Scraper
@@ -143,7 +142,7 @@ with st.sidebar:
 
     trip_type = st.radio("Tipo", ["Solo Ida", "Ida y Vuelta"], horizontal=True)
     d1, d2 = st.columns(2)
-    dept_date = d1.date_input("Fecha Ida", datetime.today(), min_value=datetime.today())
+    dept_date = d1.date_input("Fecha Ida", datetime.now(SPAIN_TZ).date(), min_value=datetime.now(SPAIN_TZ).date())
     min_time_out = d1.time_input("Hora Ida", dt_time(6, 0))
     
     ret_date, min_time_ret = None, dt_time(0,0)
@@ -249,9 +248,9 @@ if st.session_state.get('searching'):
                 with t2: draw(ret, "Vuelta")
             
             if auto_refresh:
-                st.caption(f"Actualizado: {datetime.now().strftime('%H:%M:%S')}. Próxima en {refresh_rate}s.")
+                st.caption(f"Actualizado: {datetime.now(SPAIN_TZ).strftime('%H:%M:%S')}. Próxima en {refresh_rate}s.")
             else:
-                st.caption(f"Última actualización: {datetime.now().strftime('%H:%M:%S')}.")
+                st.caption(f"Última actualización: {datetime.now(SPAIN_TZ).strftime('%H:%M:%S')}.")
 
     except Exception as e: st.error(f"Error: {e}")
 
@@ -259,4 +258,5 @@ if st.session_state.get('searching'):
         time.sleep(refresh_rate)
 
         st.rerun()
+
 
