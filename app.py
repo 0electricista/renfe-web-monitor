@@ -117,7 +117,7 @@ with st.sidebar:
     
     col_header, col_help = st.columns([0.85, 0.15])
     with col_header:
-        st.subheader("🤖 Telegram")
+        st.subheader("🤖 Telegram (opcional)")
     with col_help:
         # El CSS inyectado arriba hará que este botón se vea compacto
         if st.button("❔", help="¿Cómo configurar esto?"):
