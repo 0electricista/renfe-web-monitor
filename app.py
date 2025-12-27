@@ -7,6 +7,8 @@ import threading
 import extra_streamlit_components as stx  
 from datetime import datetime, time as dt_time, timedelta
 import streamlit.components.v1 as components
+import pytz 
+SPAIN_TZ = pytz.timezone('Europe/Madrid')
 TOKEN = st.secrets['TELEGRAM_TOKEN']
 
 try:
@@ -127,7 +129,7 @@ with st.sidebar:
         
         c1, c2 = st.columns(2)
         if c1.button("💾 Guardar Chat ID"):
-            cookie_manager.set("tg_chat_id", tg_chat_id, expires_at=datetime.now() + timedelta(days=30), key="set_chat")
+            cookie_manager.set("tg_chat_id", tg_chat_id, expires_at=datetime.now(SPAIN_TZ) + timedelta(days=30), key="set_chat")
             st.success("Guardado.")
             time.sleep(1)
             st.rerun()
@@ -262,9 +264,9 @@ if st.session_state.get('searching'):
                 with t2: draw(ret, "Vuelta")
             
             if auto_refresh:
-                st.caption(f"Actualizado: {datetime.now().strftime('%H:%M:%S')}. Próxima en {refresh_rate}s.")
+                st.caption(f"Actualizado: {datetime.now(SPAIN_TZ).strftime('%H:%M:%S')}. Próxima en {refresh_rate}s.")
             else:
-                st.caption(f"Última actualización: {datetime.now().strftime('%H:%M:%S')}.")
+                st.caption(f"Última actualización: {datetime.now(SPAIN_TZ).strftime('%H:%M:%S')}.")
 
     except Exception as e: st.error(f"Error: {e}")
 
