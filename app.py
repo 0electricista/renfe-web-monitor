@@ -229,7 +229,7 @@ if st.session_state.get('searching'):
                 msg = f"Detectados {len(new_msgs)} trenes nuevos."
                 st.toast(msg, icon="🎉")
                 trigger_notification("¡Novedades!", msg)
-                if tg_token and tg_chat_id:
+                if tg_chat_id:
                     enviar_telegram(tg_chat_id, f"🚨 <b>¡Novedades!</b> en trayecto en tu búsqueda entre {origin_name} y {dest_name} \n\n"+"\n".join(new_msgs))
             
             st.session_state['known'] = current_ids
@@ -272,3 +272,4 @@ if st.session_state.get('searching'):
         time.sleep(refresh_rate)
 
         st.rerun()
+
