@@ -1,76 +1,71 @@
-from playwright.sync_api import sync_playwright
-from playwright_stealth import Stealth
-import subprocess
-import os
-import subprocess
-import os
+# pip install seleniumbase
+from seleniumbase import Driver
+from .models import TrainRideRecord
+import time
 
-
-# === ESTRUCTURA MODIFICADA PARA MANTENER LA INSTANCIA ===
-
-def iniciar_sesion(email,password):
-        # 1. Define la ruta exacta al ejecutable de Brave según tu SO.
-    # Ejemplos comunes:
-    # Windows: r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
-    # macOS: "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
-    # Linux: "/usr/bin/brave-browser"
-    brave_path = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"  # Reemplaza con tu ruta real
-
-    # 2. Define un directorio de usuario temporal o específico para el debugging.
-    # Si intentas usar el mismo perfil que tu navegación diaria mientras está abierto, fallará.
-    user_data_dir = os.path.join(os.getcwd(), "brave_debug_profile")
-
-    # 3. Configura los argumentos
-    args = [
-        brave_path,
-        "--remote-debugging-port=9222",
-        f"--user-data-dir={user_data_dir}",
-        "--no-first-run",           # Evita pantallas de bienvenida
-        "--no-default-browser-check" # Evita avisos innecesarios
-    ]
-
-    # 4. Inicia el proceso
-    try:
-        # Popen inicia el proceso sin bloquear la ejecución de tu script en Python
-        process = subprocess.Popen(args)
-        print(f"Brave iniciado correctamente. PID: {process.pid}")
-        print("El puerto CDP 9222 está ahora a la escucha.")
-    except FileNotFoundError:
-        print(f"Error crítico: No se encontró el ejecutable en la ruta '{brave_path}'. Verifica que Brave esté instalado ahí.")
-    except Exception as e:
-        print(f"Se produjo un error inesperado al lanzar el proceso: {e}")
-    # En vez de usar 'with', iniciamos Playwright y lo guardamos
-    p = sync_playwright().start()
-    
-    # Iniciamos el navegador
-    browser = p.chromium.connect_over_cdp("http://localhost:9222")
-    
-    # Creamos el contexto
-    contexto = browser.new_context()
-    stealth = Stealth()
-    
-    # Limpiamos todo al empezar (opcional si es un contexto nuevo, pero lo mantenemos como pedías)
-    contexto.clear_cookies()
-    page = contexto.new_page()
-    stealth.apply_stealth_sync(page)
-    
-    page.goto("https://venta.renfe.com/vol/loginParticular.do")
-    page.evaluate("window.localStorage.clear();")
-    page.evaluate("window.sessionStorage.clear();")
-    
-    # Rellenamos el login
-    page.fill('input[name="userId"]', email)
-    page.fill('input[name="password"]', password)
-    page.get_by_role('button', name='Entrar').click()
+def iniciar_sesion_sb(email:str, password:str) -> tuple[list[dict], bool]:
+    # Inicializa el navegador en modo indetectable
+    driver = Driver(uc=True, headless=False)
     
     try:
-        # Reemplaza 'AQUÍ_EL_TEXTO' por el texto exacto que aparece, ej: 'Código de verificación' o 'Introduce tu PIN'
-        page.wait_for_selector("text=Mis viajes", state='visible', timeout=40000)
-        # O alternativa si es parte de un texto más grande: 
-        # page.locator("text=AQUÍ_EL_TEXTO").wait_for(state='visible', timeout=40000)
+        driver.get("https://venta.renfe.com/vol/loginParticular.do")
+        
+        # SeleniumBase maneja la escritura simulando humanos por defecto
+        driver.type('input[name="userId"]', email)
+        driver.type('input[name="password"]', password)
+        driver.click('button:contains("Aceptar")')
+        driver.click('button:contains("Entrar")')
+        
+        # Esperar al elemento que confirma el login
+        driver.wait_for_element_visible('span.rf-search-alternative__links-link[title="Compra tu billete"]', timeout=40)        
+        # Extraer cookies
+        cookies = driver.get_cookies()
+        print("Exito")
+        return cookies, True
+        
     except Exception as e:
-        print(f"Error esperando el OTP/Login: {e}")
-        return p, browser, contexto, page, False
-    
-    # Devolvemos los objetos VIVOS para usarlos en el resto de tu código/aplicación
-    return p, browser, contexto, page , True
+        print(e)
+        return None, False
+    finally:
+        driver.quit()
+
+def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador: str) -> tuple[bool, str]:
+    """Inicia sesión y formaliza un viaje con el bono en una misma sesión de navegador."""
+    driver = Driver(uc=True, headless=False)
+    try:
+        # 1. Login en la misma sesión del navegador
+        driver.get("https://venta.renfe.com/vol/loginParticular.do")
+        driver.type('input[name="userId"]', email)
+        driver.type('input[name="password"]', password)
+        driver.click('button:contains("Aceptar")')
+        driver.click('button:contains("Entrar")')
+        driver.wait_for_element_visible(
+            'span.rf-search-alternative__links-link[title="Compra tu billete"]', timeout=40
+        )
+
+        # 2. Ir a la página de bonos y seleccionar el abono
+        driver.get("https://venta.renfe.com/vol/myPassesCard.do")
+        driver.js_click(f"a[id^='new{localizador.strip()}']")
+
+        # 3. Seleccionar trayecto (IDA o VUELTA)
+        trenes_ida = driver.get_attribute("#journeyStationOriginDescription", "placeholder").split(" - ")
+        es_ida = trenes_ida[0] in train.origin.upper()
+        if not es_ida:
+            driver.click("#journeyStationDestin")
+
+        # 4. Fecha y buscar trenes
+        driver.type("#fecha1", train.departure_time.strftime("%d/%m/%Y"))
+        driver.click('button:contains("Siguiente")')
+
+        # 5. Seleccionar el tren por hora de salida
+        hora_objetivo = train.departure_time.strftime("%H.%M")
+        driver.js_click(f"//tr[td[@data-label='Salida' and normalize-space()='{hora_objetivo}']]//button[contains(@class,'btn-purple')]")
+        driver.js_click('button:contains("Siguiente")')
+        time.sleep(10)
+
+        return True, f"Formalización del trayecto {train.origin}-{train.destination} realizada con éxito"
+    except Exception as e:
+        print(e)
+        return False, f"No se pudo completar la compra: {e}"
+    finally:
+        driver.quit()
