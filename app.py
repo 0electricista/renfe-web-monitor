@@ -4,14 +4,6 @@ Renfe Web Monitor — Aplicación principal (Streamlit).
 Monitoriza la disponibilidad de trenes en Renfe y permite la autocompra
 de billetes mediante un bot de Telegram con interacción por botones inline.
 """
-
-import sys
-import asyncio
-
-# Parche para evitar NotImplementedError de Playwright en Windows con Streamlit
-if sys.platform == "win32":
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-
 import json
 import math
 import time
@@ -20,7 +12,6 @@ from datetime import datetime, time as dt_time, timedelta
 import pandas as pd
 import pytz
 import streamlit as st
-import streamlit.components.v1 as components
 import extra_streamlit_components as stx
 
 from src.models import TrainRideRecord
@@ -63,7 +54,7 @@ tg_handler = _init_telegram()
 
 @st.cache_data
 def load_stations() -> dict:
-    """Carga el mapa nombre → código de estaciones desde el JSON."""
+    """Carga el diccionario nombre → código de estaciones desde el JSON."""
     try:
         with open("assets/stations.json", "r", encoding="utf-8") as f:
             return {name: info["cdgoEstacion"] for name, info in json.load(f).items()}
@@ -89,14 +80,14 @@ def trigger_browser_notification(title: str, body: str):
         }})();
     </script>
     """
-    components.html(js, height=0, width=0)
+    st.html(js, unsafe_allow_javascript=True)
 
 
 def request_notification_perms():
     """Solicita permisos de notificación del navegador."""
-    components.html(
+    st.html(
         '<script>if(Notification.permission==="default")Notification.requestPermission();</script>',
-        height=0, width=0,
+        unsafe_allow_javascript=True
     )
 
 
@@ -120,11 +111,11 @@ def invertir_estaciones():
 @st.dialog("🤖 Guía de Configuración Telegram")
 def mostrar_ayuda_telegram():
     st.markdown("""
-    1. Accede al bot [@RenfeWebMonitorBot](https://t.me/RenfeWebMonitor_bot).
-    2. Haz clic en "Iniciar" o envía `/start`.
-    3. El bot te responderá con tu **Chat ID**.
-    4. Copia ese número y pégalo en el campo "Chat ID".
-    5. Guarda y prueba la conexión.
+    1. Accede al bot [@RenfeWebMonitorBot](https://t.me/RenfeWebMonitor_bot).  
+    2. Haz clic en "Iniciar" o envía `/start`.  
+    3. El bot te responderá con tu **Chat ID**.  
+    4. Copia ese número y pégalo en el campo "Chat ID".  
+    5. Guarda y prueba la conexión.  
     """)
 
 
@@ -384,16 +375,16 @@ if not st.session_state.get("searching"):
 
     with st.expander("🔍 Funcionalidades", expanded=True):
         st.markdown("""
-        1️⃣ Búsquedas automáticas de trayectos sin recargar la página.
-        2️⃣ Monitorización de trenes específicos con opción de autocompra.
-        3️⃣ Notificaciones por Telegram con botones para comprar o descartar.
+        1️⃣ Búsquedas automáticas de trayectos sin recargar la página.  
+        2️⃣ Monitorización de trenes específicos con opción de autocompra **SOLO CON BONO**.  
+        3️⃣ Notificaciones por Telegram con botones para comprar o descartar.  
         """)
 
     with st.expander("❔ Configuración de Telegram", expanded=not default_chat):
         st.markdown("""
-        1. Accede a [@RenfeWebMonitorBot](https://t.me/RenfeWebMonitor_bot).
-        2. Envía `/start` y copia tu **Chat ID**.
-        3. Pégalo en la configuración del sidebar.
+        1. Accede a [@RenfeWebMonitorBot](https://t.me/RenfeWebMonitor_bot).  
+        2. Envía `/start` y copia tu **Chat ID**.  
+        3. Pégalo en la configuración de la barra lateral.  
         """)
 
     with st.expander("🛒 Configuración de autocompra", expanded=True):
@@ -405,7 +396,6 @@ if not st.session_state.get("searching"):
         password = st.text_input("Contraseña Renfe", type="password", value=default_password or "")
         localizador = st.text_input("Localizador del Abono", value=default_local or "")
         if st.button("Iniciar sesión", width="stretch"):
-            # Primero ejecutar el login (antes de cookie_manager.set que causa rerun)
             st.session_state["localizador"] = localizador
             # Persistir credenciales en cookies del navegador AL FINAL
             # (cookie_manager.set provoca rerun de Streamlit)

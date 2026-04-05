@@ -3,32 +3,6 @@ from seleniumbase import Driver
 from .models import TrainRideRecord
 import time
 
-def iniciar_sesion_sb(email:str, password:str) -> tuple[list[dict], bool]:
-    # Inicializa el navegador en modo indetectable
-    driver = Driver(uc=True, headless=False)
-    
-    try:
-        driver.get("https://venta.renfe.com/vol/loginParticular.do")
-        
-        # SeleniumBase maneja la escritura simulando humanos por defecto
-        driver.type('input[name="userId"]', email)
-        driver.type('input[name="password"]', password)
-        driver.click('button:contains("Aceptar")')
-        driver.click('button:contains("Entrar")')
-        
-        # Esperar al elemento que confirma el login
-        driver.wait_for_element_visible('span.rf-search-alternative__links-link[title="Compra tu billete"]', timeout=40)        
-        # Extraer cookies
-        cookies = driver.get_cookies()
-        print("Exito")
-        return cookies, True
-        
-    except Exception as e:
-        print(e)
-        return None, False
-    finally:
-        driver.quit()
-
 def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador: str) -> tuple[bool, str]:
     """Inicia sesión y formaliza un viaje con el bono en una misma sesión de navegador."""
     driver = Driver(uc=True, headless=False)
