@@ -210,50 +210,7 @@ def _render_selectable_table(df: pd.DataFrame, header: str, show_direction: bool
             st.success("¡Selección actualizada!")
 
 
-# ================================================================
-#  PROCESAMIENTO DE COMPRAS PENDIENTES
-# ================================================================
 
-def process_pending_purchases():
-    """Consume la cola de compras del TelegramHandler y lanza autopay."""
-    compras = tg_handler.obtener_compras_pendientes()
-
-    for compra in compras:
-        chat_id = compra["chat_id"]
-        train = compra["train"]
-
-        tg_handler.enviar_mensaje(
-            chat_id,
-            f"🔄 Iniciando compra del tren de las {train.departure_time.strftime('%H:%M')}...",
-        )
-
-        try:
-            email = cookie_manager.get("email")
-            password = cookie_manager.get("password")
-            if not email or not password:
-                tg_handler.enviar_mensaje(
-                    chat_id,
-                    "❌ No hay credenciales configuradas. Inicia sesión en la web primero.",
-                )
-                continue
-
-            localizador = st.session_state.get("localizador", "") or cookie_manager.get("local") or ""
-            if not localizador:
-                tg_handler.enviar_mensaje(
-                    chat_id,
-                    "❌ No hay localizador de abono configurado.",
-                )
-                continue
-
-            exito, mensaje = autopay.compra_trenes(train, email, password, localizador)
-            emoji = "✅" if exito else "❌"
-            tg_handler.enviar_mensaje(chat_id, f"{emoji} {mensaje}")
-
-        except Exception as e:
-            tg_handler.enviar_mensaje(chat_id, f"❌ Error en la compra: {e}")
-
-        finally:
-            tg_handler.completar_compra()
 
 
 # ================================================================
@@ -465,7 +422,11 @@ if st.session_state.get("searching"):
                 # ── Autocompra: enviar oferta Telegram para trenes monitorizados ──
                 if is_monitored and tg_chat_id:
                     if is_new or not tg_handler.tiene_oferta_activa(tid):
-                        tg_handler.enviar_oferta(tg_chat_id, tid, t, label)
+                        # Pasa las credenciales activas del navegador a la oferta
+                        email_actual = cookie_manager.get("email")
+                        password_actual = cookie_manager.get("password")
+                        local_actual = st.session_state.get("localizador", "") or cookie_manager.get("local") or ""
+                        tg_handler.enviar_oferta(tg_chat_id, tid, t, label, email_actual, password_actual, local_actual)
 
                 # ── Notificación browser para trenes nuevos no monitorizados ──
                 elif is_new and not st.session_state.get("first_run"):
@@ -474,8 +435,7 @@ if st.session_state.get("searching"):
                         f"Tren {label} {t.departure_time.strftime('%H:%M')} ({t.price}€)",
                     )
 
-            # ── Procesar compras pendientes de Telegram ──
-            process_pending_purchases()
+
 
             # ── Limpiar ofertas expiradas (timeout 5 min) ──
             tg_handler.limpiar_ofertas_expiradas()

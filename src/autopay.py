@@ -1,11 +1,10 @@
-# pip install seleniumbase
 from seleniumbase import Driver
 from .models import TrainRideRecord
 import time
 
-def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador: str) -> tuple[bool, str]:
+def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador: str, tg_handler=None, chat_id=None) -> tuple[bool, str]:
     """Inicia sesión y formaliza un viaje con el bono en una misma sesión de navegador."""
-    driver = Driver(uc=True, headless=False)
+    driver = Driver(uc=True, headless=True)
     try:
         # 1. Login en la misma sesión del navegador
         driver.get("https://venta.renfe.com/vol/loginParticular.do")
@@ -13,9 +12,34 @@ def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador
         driver.type('input[name="password"]', password)
         driver.click('button:contains("Aceptar")')
         driver.click('button:contains("Entrar")')
-        driver.wait_for_element_visible(
-            'span.rf-search-alternative__links-link[title="Compra tu billete"]', timeout=40
-        )
+        
+        # Esperamos a que aparezca o la vista de éxito o la de OTP
+        try:
+            print("Esperando OTP")
+            driver.wait_for_element(
+                'span.rf-search-alternative__links-link[title="Compra tu billete"], #idBotonValDispositivo', timeout=40
+            )
+        except Exception:
+            pass # Si da timeout, continuará e intentará con los asserts o is_element_visible
+
+        # Si el botón del OTP está visible, solicitamos código por Telegram
+        if driver.is_element_visible("#idBotonValDispositivo"):
+            if tg_handler and chat_id:
+                otp_code = tg_handler.request_otp(chat_id, timeout=180) # 3 mins para insertar
+                if otp_code:
+                    driver.type("#codigoValidaLogin2F", otp_code)
+                    driver.click("#idBotonValDispositivo")
+                    driver.wait_for_element_visible(
+                        'span.rf-search-alternative__links-link[title="Compra tu billete"]', timeout=40
+                    )
+                else:
+                    return False, "Se agotó el tiempo de espera (3 min) para recibir el código OTP de Renfe."
+            else:
+                return False, "Renfe solicita código de verificación OTP, pero no hay Telegram configurado (introduce tu Chat ID en Configuración) para introducilo."
+        else:
+            driver.wait_for_element_visible(
+                'span.rf-search-alternative__links-link[title="Compra tu billete"]', timeout=40
+            )
 
         # 2. Ir a la página de bonos y seleccionar el abono
         driver.get("https://venta.renfe.com/vol/myPassesCard.do")

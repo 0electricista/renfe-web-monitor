@@ -40,9 +40,13 @@ class TelegramHandler:
         self._compra_en_proceso = False
 
         self._lock = threading.Lock()
+        
+        # Cola para esperar por OTPs
+        self._waiting_for_otp = {}
 
         self._register_handlers()
         self._start_polling()
+        self._start_purchase_worker()
 
     # ─── Handlers del bot ───────────────────────────────────────────
 
@@ -58,6 +62,19 @@ class TelegramHandler:
         @self.bot.callback_query_handler(func=lambda call: call.data.startswith("skip_"))
         def handle_skip(call):
             self._on_skip(call, call.data[5:])
+
+        @self.bot.message_handler(func=lambda message: True, content_types=['text'])
+        def handle_text(message):
+            chat_id = str(message.chat.id)
+            text = message.text.strip()
+            
+            if chat_id in self._waiting_for_otp:
+                # Comprobar que el text es de 6 dígitos (condición habitual de OTP)
+                if len(text) == 6 and text.isdigit():
+                    self._waiting_for_otp[chat_id].put(text)
+                    self.bot.reply_to(message, "✅ Código recibido. Intentando validar...")
+                else:
+                    self.bot.reply_to(message, "⚠️ El código debe ser de 6 dígitos. Inténtalo de nuevo:")
 
     def _on_buy(self, call, callback_id):
         with self._lock:
@@ -85,6 +102,9 @@ class TelegramHandler:
                 "train_id": offer["train_id"],
                 "train": train,
                 "chat_id": str(offer["chat_id"]),
+                "email": offer.get("email"),
+                "password": offer.get("password"),
+                "localizador": offer.get("localizador"),
             })
             self._remove_offer(callback_id)
 
@@ -109,7 +129,7 @@ class TelegramHandler:
 
     # ─── API Pública ────────────────────────────────────────────────
 
-    def enviar_oferta(self, chat_id: str, train_id: str, train: TrainRideRecord, label: str):
+    def enviar_oferta(self, chat_id: str, train_id: str, train: TrainRideRecord, label: str, email: str = None, password: str = None, localizador: str = None):
         """Envía oferta de compra con botones inline. No duplica ofertas activas."""
         with self._lock:
             if train_id in self._train_to_callback:
@@ -128,6 +148,9 @@ class TelegramHandler:
                 "train": train,
                 "label": label,
                 "timestamp": datetime.now(),
+                "email": email,
+                "password": password,
+                "localizador": localizador
             }
             self._train_to_callback[train_id] = cb_id
 
@@ -165,15 +188,7 @@ class TelegramHandler:
                 return False
             return True
 
-    def obtener_compras_pendientes(self) -> list:
-        """Vacía la cola y devuelve las compras pendientes."""
-        compras = []
-        while not self._purchase_queue.empty():
-            try:
-                compras.append(self._purchase_queue.get_nowait())
-            except queue.Empty:
-                break
-        return compras
+
 
     def completar_compra(self):
         """Marca la compra activa como completada, permitiendo nuevas compras."""
@@ -187,6 +202,20 @@ class TelegramHandler:
             return True
         except Exception:
             return False
+
+    def request_otp(self, chat_id: str, timeout: int = 180) -> str | None:
+        """Solicita el código OTP al usuario por Telegram y bloquea la ejecución hasta recibirlo o agotar el tiempo."""
+        self.enviar_mensaje(
+            chat_id, 
+            "🔐 <b>Se requiere código de verificación (OTP)</b> para iniciar sesión en Renfe.\n\nPor favor, escribe el código de 6 dígitos que has recibido en tu móvil o correo:"
+        )
+        self._waiting_for_otp[chat_id] = queue.Queue()
+        try:
+            return self._waiting_for_otp[chat_id].get(timeout=timeout)
+        except queue.Empty:
+            return None
+        finally:
+            self._waiting_for_otp.pop(chat_id, None)
 
     def limpiar_ofertas_expiradas(self):
         """Elimina ofertas que hayan superado el timeout de 5 minutos."""
@@ -236,3 +265,35 @@ class TelegramHandler:
                         time.sleep(5)
 
         threading.Thread(target=_loop, daemon=True).start()
+
+    def _start_purchase_worker(self):
+        """Arranca el hilo en segundo plano que procesa las compras independiente de Streamlit."""
+        def worker():
+            from src import autopay
+            while True:
+                compra = self._purchase_queue.get()  # Bloqueante
+                chat_id = compra["chat_id"]
+                train = compra["train"]
+                email = compra["email"]
+                password = compra["password"]
+                localizador = compra["localizador"]
+
+                if not email or not password:
+                    self.enviar_mensaje(chat_id, "❌ No hay credenciales configuradas. Inicia sesión en la web primero.")
+                    self.completar_compra()
+                    continue
+                if not localizador:
+                    self.enviar_mensaje(chat_id, "❌ No hay localizador de abono configurado.")
+                    self.completar_compra()
+                    continue
+
+                try:
+                    exito, mensaje = autopay.compra_trenes(train, email, password, localizador, self, chat_id)
+                    emoji = "✅" if exito else "❌"
+                    self.enviar_mensaje(chat_id, f"{emoji} {mensaje}")
+                except Exception as e:
+                    self.enviar_mensaje(chat_id, f"❌ Error en la compra: {e}")
+                finally:
+                    self.completar_compra()
+
+        threading.Thread(target=worker, daemon=True).start()
