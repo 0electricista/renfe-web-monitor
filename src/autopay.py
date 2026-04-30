@@ -73,6 +73,7 @@ def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador
 
             # Si el botón del OTP está visible, solicitamos código por Telegram
             if sb.is_element_visible("#idBotonValDispositivo"):
+                print("Aqui llega")
                 if tg_handler and chat_id:
                     otp_code = tg_handler.request_otp(chat_id, timeout=180) # 3 mins para insertar
                     if otp_code:
