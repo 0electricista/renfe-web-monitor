@@ -6,10 +6,10 @@ from selenium.webdriver.common.action_chains import ActionChains
 from pathlib import Path
 
 def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador: str, tg_handler=None, chat_id=None) -> tuple[bool, str]:
-    BASE_DIR = Path(__file__).resolve().parent
+    BASE_DIR = Path(__file__).resolve().parent.parent
     extension_path = str(BASE_DIR / "assets" / "Buster")
     """Inicia sesión y formaliza un viaje con el bono en una misma sesión de navegador."""
-    driver = Driver(headless=True, extension_dir=extension_path)
+    driver = Driver(headless2=True, extension_dir=extension_path)
     try:
         # 1. Login en la misma sesión del navegador
         driver.get("https://venta.renfe.com/vol/loginParticular.do")
