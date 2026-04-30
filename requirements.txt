@@ -2,8 +2,6 @@
 streamlit
 pandas
 seleniumbase>=4.33.0
-PyVirtualDisplay>=3.0
-ipdb>=0.13.13
 
 # --- TELEGRAM (Corrección Crítica) ---
 # 'telebot' y 'pytelegrambotapi' son la misma librería. 

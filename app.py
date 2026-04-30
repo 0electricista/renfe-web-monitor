@@ -11,10 +11,6 @@ from datetime import datetime, time as dt_time, timedelta
 
 import pandas as pd
 import pytz
-import os
-os.environ["CHROME_BINARY_PATH"] = "/usr/bin/chromium-browser"   # Chromium del sistema (packages.txt)
-os.environ["CHROMEDRIVER_PATH"] = "/usr/bin/chromedriver"         # ChromeDriver del sistema (packages.txt)
-os.environ["SELENIUMBASE_DRIVERS_PATH"] = "/tmp/seleniumbase/drivers"
 import streamlit as st
 import extra_streamlit_components as stx
 

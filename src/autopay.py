@@ -1,6 +1,7 @@
 from seleniumbase import Driver, SB
 from .models import TrainRideRecord
 import time
+import os
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from pathlib import Path
@@ -9,7 +10,14 @@ def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador
     BASE_DIR = Path(__file__).resolve().parent.parent
     extension_path = str(BASE_DIR / "assets" / "Buster")
     """Inicia sesión y formaliza un viaje con el bono en una misma sesión de navegador."""
-    driver = Driver(headless2=True, extension_dir=extension_path, use_chromium=True, uc=True)
+    driver = Driver(
+        headless2=True,
+        extension_dir=extension_path,
+        uc=True,
+        use_chromium=True,
+        binary_location="/usr/bin/chromium" if os.name != "nt" else None,
+        driver_version="mismatch",
+    )
     try:
         # 1. Login en la misma sesión del navegador
         driver.get("https://venta.renfe.com/vol/loginParticular.do")
