@@ -1,3 +1,4 @@
+from matplotlib import use
 from seleniumbase import Driver, SB
 from .models import TrainRideRecord
 import time
@@ -9,7 +10,7 @@ def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador
     BASE_DIR = Path(__file__).resolve().parent.parent
     extension_path = str(BASE_DIR / "assets" / "Buster")
     """Inicia sesión y formaliza un viaje con el bono en una misma sesión de navegador."""
-    driver = Driver(headless2=True, extension_dir=extension_path)
+    driver = Driver(headless2=True, extension_dir=extension_path, use_chromium=True, uc=True)
     try:
         # 1. Login en la misma sesión del navegador
         driver.get("https://venta.renfe.com/vol/loginParticular.do")
@@ -55,6 +56,7 @@ def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador
             # Al terminar, vuelve siempre al contenido principal
             driver.switch_to.default_content()
         except Exception as e:
+            print("Todo mal",e)
             pass
         try:
             print("Esperando OTP")
