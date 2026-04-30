@@ -1,4 +1,3 @@
-from pyarrow.dataset import exc
 from seleniumbase import Driver, SB
 from .models import TrainRideRecord
 import time
@@ -6,8 +5,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 
 def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador: str, tg_handler=None, chat_id=None) -> tuple[bool, str]:
+    BASE_DIR = Path(__file__).resolve().parent
+    extension_path = str(BASE_DIR / "assets" / "Buster")
     """Inicia sesión y formaliza un viaje con el bono en una misma sesión de navegador."""
-    driver = Driver(headless=True, extension_dir=r"assets\Buster")
+    driver = Driver(headless=True, extension_dir=extension_path)
     try:
         # 1. Login en la misma sesión del navegador
         driver.get("https://venta.renfe.com/vol/loginParticular.do")
@@ -53,7 +54,7 @@ def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador
             # Al terminar, vuelve siempre al contenido principal
             driver.switch_to.default_content()
         except Exception as e:
-            continue
+            pass
         try:
             print("Esperando OTP")
             driver.wait_for_element(
