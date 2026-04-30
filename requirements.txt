@@ -1,16 +1,47 @@
-# Forzar compatibilidad con Python 3.12 y SeleniumBase moderno
-PyVirtualDisplay>=3.0
+# --- LIBRERÍAS CORE (Actualizadas para evitar conflictos) ---
+streamlit
+pandas
 seleniumbase>=4.33.0
+PyVirtualDisplay>=3.0
 ipdb>=0.13.13
 
-# Librerías base (SIN versiones fijas, deja que pip decida la más nueva)
-streamlit
+# --- TELEGRAM (Corrección Crítica) ---
+# 'telebot' y 'pytelegrambotapi' son la misma librería. 
+# Instalar ambas causa conflictos de archivos. Se deja la principal:
+pytelegrambotapi==4.24.0
+python-telegram-bot>=21.4
+
+# --- UTILIDADES Y PARSING ---
+lxml>=4.9.3
+requests>=2.32.4
+urllib3>=2.2.3
+aiohttp>=3.12.15
+pydantic>=2.11.7
+pydantic-core>=2.33.2
+annotated-types>=0.7.0
+typing-extensions>=4.12.2
+typing-inspection==0.4.1
+
+# --- FECHAS Y TIEMPOS ---
+dateparser==1.2.1
+python-dateutil==2.9.0.post0
+pytz==2025.1
+tzlocal==5.2
+
+# --- TEXTO Y FORMATO ---
+rich>=14.0.0
+pygments>=2.19.1
+markdown-it-py>=3.0.0
+mdurl>=0.1.2
+regex>=2024.11.6
+rapidfuzz>=3.10.1
+thefuzz==0.22.1
+
+# --- OTROS ---
+certifi>=2024.8.30
+charset-normalizer>=3.4.0
+idna>=3.10
+json5==0.12.0
+six>=1.17.0
 extra_streamlit_components
-pandas
-pytelegrambotapi
-python-telegram-bot
-lxml
-requests
-pydantic
-rapidfuzz
-dateparser
+win11toast>=0.32 ; sys_platform == 'win32'
