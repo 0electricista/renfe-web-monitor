@@ -31,5 +31,6 @@ streamlit
 extra_streamlit_components
 pytz
 pandas
-seleniumbase
 PyVirtualDisplay>=3.0
+seleniumbase>=4.33.0
+ipdb>=0.13.13
