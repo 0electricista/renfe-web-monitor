@@ -2,4 +2,3 @@ chromium
 chromium-driver
 libnss3
 libgbm1
-libglib2.0-0
