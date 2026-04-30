@@ -1,107 +1,110 @@
-import random
-from seleniumbase import SB
+from pyarrow.dataset import exc
+from seleniumbase import Driver, SB
 from .models import TrainRideRecord
-
-
-def _human_delay(sb, min_s=0.5, max_s=1.8):
-    """Pausa aleatoria que simula comportamiento humano."""
-    sb.sleep(round(random.uniform(min_s, max_s), 2))
-
-
-def _check_and_solve_captcha(sb):
-    """Si aparece un captcha en la página, intenta resolverlo automáticamente."""
-    try:
-        sb.cdp.gui_click_captcha()
-    except Exception:
-        pass
-
+import time
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
 
 def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador: str, tg_handler=None, chat_id=None) -> tuple[bool, str]:
     """Inicia sesión y formaliza un viaje con el bono en una misma sesión de navegador."""
+    driver = Driver(headless=True, extension_dir=r"assets\Buster")
     try:
-        with SB(uc=True, headless=False, ad_block=True) as sb:
-            # 1. Login en la misma sesión del navegador
-            sb.activate_cdp_mode("https://venta.renfe.com/vol/loginParticular.do")
-            sb.sleep(2)  # Espera inicial para que cargue completamente
-            _check_and_solve_captcha(sb)
+        # 1. Login en la misma sesión del navegador
+        driver.get("https://venta.renfe.com/vol/loginParticular.do")
+        driver.type('input[name="userId"]', email)
+        driver.type('input[name="password"]', password)
+        driver.click('button:contains("Aceptar")')
+        driver.click('button:contains("Entrar")')
+        # Esperamos a que aparezca o la vista de éxito o la de OTP
+        try:
+            driver.wait_for_element_visible('iframe[title*="recaptcha"]', timeout=10)
+            print("Esperando captcha")
+            # 2. Salto al frame usando el selector CSS del título
+            driver.switch_to_frame('iframe[title*="recaptcha"]')
+            # 3. Espera específica a que Buster inyecte el botón de "solver"
+            driver.execute_script("window.scrollTo(0, 500);")
+            time.sleep(1)
+            driver.execute_script("window.scrollTo(0, 0);")
+            # 1. Obtenemos la lista de frames desde el contexto principal
+            driver.switch_to.default_content()
+            iframes = driver.find_elements(By.TAG_NAME, 'iframe')
+            for frame in iframes:
+                time.sleep(1)
+                print("Captcha")
+                try:
+                    # Volvemos siempre al inicio antes de probar un nuevo frame
+                    driver.switch_to.default_content()
+                    driver.switch_to.frame(frame)
+                    
+                    # Buscamos el contenedor que tiene el Shadow Root
+                    shadow_parents = driver.find_elements(By.CLASS_NAME, 'button-holder.help-button-holder')
+                    
+                    for parent in shadow_parents:
+                        if parent.is_displayed():
+                            # Usamos ActionChains para hacer un clic físico en el centro del div
+                            actions = ActionChains(driver)
+                            actions.move_to_element(parent).click().perform()
+                            print("Clic realizado en el contenedor del solver.")
+                            # Salimos del bucle si ya lo encontramos
+                            break 
+                except Exception as e:
+                    continue
 
-            _human_delay(sb)
-            sb.type('input[name="userId"]', email)
-            _human_delay(sb, 0.3, 0.8)
-            sb.type('input[name="password"]', password)
-            _human_delay(sb)
+            # Al terminar, vuelve siempre al contenido principal
+            driver.switch_to.default_content()
+        except Exception as e:
+            continue
+        try:
+            print("Esperando OTP")
+            driver.wait_for_element(
+                'span.rf-search-alternative__links-link[title="Compra tu billete"], #idBotonValDispositivo', timeout=40
+            )
+        except Exception:
+            pass # Si da timeout, continuará e intentará con los asserts o is_element_visible
 
-            try:
-                sb.click('button:contains("Aceptar")')
-                _human_delay(sb, 0.5, 1.0)
-            except Exception:
-                pass
-
-            sb.click('button:contains("Entrar")')
-            _human_delay(sb, 2.0, 3.5)
-            _check_and_solve_captcha(sb)
-
-            # Esperamos a que aparezca o la vista de éxito o la de OTP
-            try:
-                print("Esperando OTP")
-                sb.wait_for_element(
-                    'span.rf-search-alternative__links-link[title="Compra tu billete"], #idBotonValDispositivo', timeout=40
-                )
-            except Exception:
-                pass  # Si da timeout, continuará e intentará con is_element_visible
-
-            # Si el botón del OTP está visible, solicitamos código por Telegram
-            if sb.is_element_visible("#idBotonValDispositivo"):
-                if tg_handler and chat_id:
-                    otp_code = tg_handler.request_otp(chat_id, timeout=180)  # 3 mins para insertar
-                    if otp_code:
-                        _human_delay(sb)
-                        sb.type("#codigoValidaLogin2F", otp_code)
-                        _human_delay(sb, 0.5, 1.2)
-                        sb.click("#idBotonValDispositivo")
-                        sb.wait_for_element_visible(
-                            'span.rf-search-alternative__links-link[title="Compra tu billete"]', timeout=40
-                        )
-                    else:
-                        return False, "Se agotó el tiempo de espera (3 min) para recibir el código OTP de Renfe."
+        # Si el botón del OTP está visible, solicitamos código por Telegram
+        if driver.is_element_visible("#idBotonValDispositivo"):
+            if tg_handler and chat_id:
+                otp_code = tg_handler.request_otp(chat_id, timeout=180) # 3 mins para insertar
+                if otp_code:
+                    driver.type("#codigoValidaLogin2F", otp_code)
+                    driver.click("#idBotonValDispositivo")
+                    driver.wait_for_element_visible(
+                        'span.rf-search-alternative__links-link[title="Compra tu billete"]', timeout=40
+                    )
                 else:
-                    return False, "Renfe solicita código de verificación OTP, pero no hay Telegram configurado (introduce tu Chat ID en Configuración) para introducilo."
+                    return False, "Se agotó el tiempo de espera (3 min) para recibir el código OTP de Renfe."
             else:
-                sb.wait_for_element_visible(
-                    'span.rf-search-alternative__links-link[title="Compra tu billete"]', timeout=40
-                )
+                return False, "Renfe solicita código de verificación OTP, pero no hay Telegram configurado (introduce tu Chat ID en Configuración) para introducilo."
+        else:
+            driver.wait_for_element_visible(
+                'span.rf-search-alternative__links-link[title="Compra tu billete"]', timeout=40
+            )
 
-            # 2. Ir a la página de bonos y seleccionar el abono
-            sb.open("https://venta.renfe.com/vol/myPassesCard.do")
-            sb.sleep(2)
-            _check_and_solve_captcha(sb)
-            _human_delay(sb)
-            sb.click(f"a[id^='new{localizador.strip()}']")
-            _human_delay(sb, 1.0, 2.0)
+        # 2. Ir a la página de bonos y seleccionar el abono
+        driver.get("https://venta.renfe.com/vol/myPassesCard.do")
+        driver.js_click(f"a[id^='new{localizador.strip()}']")
 
-            # 3. Seleccionar trayecto (IDA o VUELTA)
-            trenes_ida = sb.get_attribute("#journeyStationOriginDescription", "placeholder").split(" - ")
-            es_ida = trenes_ida[0] in train.origin.upper()
-            if not es_ida:
-                sb.click("#journeyStationDestin")
-                _human_delay(sb)
+        # 3. Seleccionar trayecto (IDA o VUELTA)
+        trenes_ida = driver.get_attribute("#journeyStationOriginDescription", "placeholder").split(" - ")
+        es_ida = trenes_ida[0] in train.origin.upper()
+        if not es_ida:
+            driver.click("#journeyStationDestin")
 
-            # 4. Fecha y buscar trenes
-            sb.type("#fecha1", train.departure_time.strftime("%d/%m/%Y"))
-            _human_delay(sb, 0.5, 1.0)
-            sb.click('button:contains("Siguiente")')
-            sb.sleep(3)
-            _check_and_solve_captcha(sb)
+        # 4. Fecha y buscar trenes
+        driver.type("#fecha1", train.departure_time.strftime("%d/%m/%Y"))
+        driver.click('button:contains("Siguiente")')
 
-            # 5. Seleccionar el tren por hora de salida
-            hora_objetivo = train.departure_time.strftime("%H.%M")
-            _human_delay(sb)
-            sb.click(f"//tr[td[@data-label='Salida' and normalize-space()='{hora_objetivo}']]//button[contains(@class,'btn-purple')]")
-            _human_delay(sb, 0.8, 1.5)
-            sb.click('button:contains("Siguiente")')
-            sb.sleep(10)
+        # 5. Seleccionar el tren por hora de salida
+        hora_objetivo = train.departure_time.strftime("%H.%M")
+        driver.js_click(f"//tr[td[@data-label='Salida' and normalize-space()='{hora_objetivo}']]//button[contains(@class,'btn-purple')]")
+        driver.js_click('button:contains("Siguiente")')
+        time.sleep(10)
 
-            return True, f"Formalización del trayecto {train.origin}-{train.destination} realizada con éxito"
+        return True, f"Formalización del trayecto {train.origin}-{train.destination} realizada con éxito"
     except Exception as e:
         print(e)
         return False, f"No se pudo completar la compra: {e}"
+    finally:
+        driver.quit()
+
