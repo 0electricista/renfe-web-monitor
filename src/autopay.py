@@ -11,28 +11,13 @@ import stat
 def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador: str, tg_handler=None, chat_id=None) -> tuple[bool, str]:
     BASE_DIR = Path(__file__).resolve().parent.parent
     extension_path = str(BASE_DIR / "assets" / "Buster")
-    """Inicia sesión y formaliza un viaje con el bono en una misma sesión de navegador."""
-    def fix_driver_permissions():
-        """Fuerza permisos de ejecución en los drivers descargados por SeleniumBase."""
-        driver_dir = os.path.join(os.path.dirname(seleniumbase.__file__), "drivers")
-        
-        if not os.path.exists(driver_dir):
-            return
-            
-        for driver_file in os.listdir(driver_dir):
-            driver_path = os.path.join(driver_dir, driver_file)
-            if os.path.isfile(driver_path):
-                # Otorga permisos de ejecución (equivalente a chmod +x)
-                st = os.stat(driver_path)
-                os.chmod(driver_path, st.st_mode | stat.S_IEXEC)
-
-    # Ejecuta esta función ANTES de importar o instanciar el Driver
-    fix_driver_permissions()
     driver = Driver(
         headless2=True,
         extension_dir=extension_path,
         uc=True,
         use_chromium=True,
+        binary_location="/usr/bin/chromium",
+        driver_executable_path="/usr/bin/chromedriver"
     )
     try:
         # 1. Login en la misma sesión del navegador
