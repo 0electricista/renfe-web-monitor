@@ -3,6 +3,7 @@ from .models import TrainRideRecord
 import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
+from pathlib import Path
 
 def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador: str, tg_handler=None, chat_id=None) -> tuple[bool, str]:
     BASE_DIR = Path(__file__).resolve().parent
