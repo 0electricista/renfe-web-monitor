@@ -11,6 +11,8 @@ from datetime import datetime, time as dt_time, timedelta
 
 import pandas as pd
 import pytz
+import os
+os.environ["SELENIUMBASE_DRIVERS_PATH"] = "/tmp/seleniumbase/drivers"
 import streamlit as st
 import extra_streamlit_components as stx
 
