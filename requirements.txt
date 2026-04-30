@@ -32,3 +32,4 @@ extra_streamlit_components
 pytz
 pandas
 seleniumbase
+PyVirtualDisplay>=3.0
