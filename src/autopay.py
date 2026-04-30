@@ -1,4 +1,4 @@
-from Lib.site-packages import seleniumbase
+import seleniumbase
 from seleniumbase import Driver, SB
 from .models import TrainRideRecord
 import time
