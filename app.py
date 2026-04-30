@@ -12,6 +12,10 @@ from datetime import datetime, time as dt_time, timedelta
 import pandas as pd
 import pytz
 import os
+# Apuntar SeleniumBase al Chromium del sistema (instalado via packages.txt)
+# para que NO intente descargarse su propio binario (falla por permisos en Streamlit Cloud)
+os.environ["CHROME_BINARY_PATH"] = "/usr/bin/chromium-browser"
+os.environ["CHROMEDRIVER_PATH"] = "/usr/bin/chromedriver"
 os.environ["SELENIUMBASE_DRIVERS_PATH"] = "/tmp/seleniumbase/drivers"
 import streamlit as st
 import extra_streamlit_components as stx

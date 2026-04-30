@@ -1,4 +1,5 @@
-chromium
-chromium-driver
+chromium-browser
+chromium-chromedriver
 libnss3
 libgbm1
+libglib2.0-0
