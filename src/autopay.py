@@ -1,4 +1,3 @@
-from matplotlib import use
 from seleniumbase import Driver, SB
 from .models import TrainRideRecord
 import time
