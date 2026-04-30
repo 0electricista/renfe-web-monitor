@@ -16,6 +16,7 @@ def compra_trenes(train: TrainRideRecord, email: str, password: str, localizador
         extension_dir=extension_path,
         uc=True,
         use_chromium=True,
+        binary_location="/usr/bin/chromium"
     )
     try:
         # 1. Login en la misma sesión del navegador
