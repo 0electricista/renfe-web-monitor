@@ -1,8 +1,8 @@
 # 🚄 Renfe Web Monitor
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://renfe-monitor.streamlit.app/)
+[![Streamlit App](https://img.shields.io/badge/-Streamlit-FF4B4B?style=flat&logo=streamlit&logoColor=white)](https://renfe-monitor.streamlit.app/)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **La forma más fácil de encontrar billetes de tren.** Olvídate de refrescar la página de Renfe constantemente. Este monitor busca por ti y te avisa visualmente cuando alguien libera un asiento. 
 
